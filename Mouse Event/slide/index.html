@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8">
+	<title>slide</title>
+	<style>
+		.father {
+			width: 300px;
+			height: 300px;
+			overflow-x: auto;
+			overflow-y: hidden;
+		}
+		.children {
+			width: 600px;
+			height: 300px;
+			background-color: #ddd;
+		}
+		.drag {
+			cursor: pointer;
+		}
+	</style>
+	<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+</head>
+<body>
+	<div class="father">
+		<div class="children"></div>
+	</div>
+	
+	<script>
+		class DragScroller {
+			constructor(target, options) {
+				try {
+					if (typeof target != 'string') {
+						throw 'target must be string!';
+					}
+					target = $(target);
+				} catch (e) {
+					console.error(e.message || 'init target fail!');
+				}
+				
+				this.state = {
+					target,
+					status: {
+						canClick: true,
+						stillPress: false,
+					},
+					pos: {
+						sumx: 0,
+						ox: 0,
+						scrollLeft: 0,
+					},
+				};
+				this.initTarget.call(this);
+			}
+			
+			initTarget() {
+				this.initMouseDown.call(this);
+				this.initMouseMove.call(this);
+				this.initMouseOut.call(this);
+				this.initMouseUp.call(this);
+			}
+			
+			initMouseDown() {
+				this.state.target.mousedown((e) => {
+					//鼠标左键轮播区域
+					this.state.target.addClass('drag');
+					if (e.button == 0) {
+						//左键图片
+						this.state.status.canClick = true;
+						//初始化拖拽,状态为true,可以触发点击事件
+						this.state.pos.sumx = 0;
+						//初始化鼠标偏移为0
+						this.state.status.stillPress = true;
+						//记录左键状态
+						this.state.pos.ox = e.pageX;
+						//记录鼠标初始坐标
+						this.state.pos.scrollLeft = this.state.target.scrollLeft();
+						//记录初始轮播水平滚动偏移
+						e.preventDefault();
+						//阻止鼠标点击默认事件
+					}
+				});
+			}
+			initMouseMove() {
+				this.state.target.mousemove((e) => {
+					//鼠标在轮播区域移动
+					if (this.state.status.stillPress) {//左键状态
+						this.state.status.canClick = false;
+						//已经拖拽,状态为false,不再触发点击事件
+						const mx = e.pageX;
+						//记录鼠标实时坐标
+						this.state.pos.sumx = this.state.pos.ox - mx;
+						//记录鼠标坐标偏移
+						this.state.target.scrollLeft(this.state.pos.scrollLeft + this.state.pos.sumx);
+					}
+				});
+			}
+			initMouseOut() {
+				this.state.target.mouseout((e) => {
+					//鼠标离开轮播区域
+					if (this.state.status.stillPress) {
+						this.state.status.stillPress = false;//释放左键状态
+						this.state.target.removeClass('drag');
+					}
+				});
+			}
+			initMouseUp() {
+				this.state.target.mouseup((e) => {
+					//鼠标释放,完成click事件
+					this.state.status.stillPress = false;
+					this.state.target.removeClass('drag');
+					//释放左键状态
+					if (this.state.status.canClick && e.button == 0) {
+						//没有拖拽或者拖拽失效,且是左键,触发点击事件
+						$(e.target).click();
+						//触发点击事件
+					}
+				});
+			}
+		}
+		new DragScroller('.father');
+	</script>
+</body>
+</html>
